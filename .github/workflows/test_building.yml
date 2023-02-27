@@ -44,14 +44,12 @@ jobs:
 
           sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
 
-          gpg --list-keys
-          gpg --list-secret-keys
-
           echo -e "${{ secrets.GPG_PRIVATE_KEY }}" > /tmp/private.key
 
           gpg --import /tmp/private.key
 
-          gpg --list-secret-key ${{ secrets.GPG_KEY }}
+          gpg --list-keys
+          gpg --list-secret-keys
 
       - name: Build Hybrid Calamares Config
         run: |
