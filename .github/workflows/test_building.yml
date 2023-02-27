@@ -1,0 +1,58 @@
+name: Test PKGBUILD sign
+on:
+  schedule:
+    - cron: '17 */12 * * *' # “At minute 17 past every 12th hour.”
+  workflow_dispatch:
+
+jobs:
+  update-core-x86_64-repo:
+    env:
+      PKGDEST: "/tmp/hybrid-core"
+      repo: "hybrid-core"
+      arch_repo: "x86_64"
+
+    runs-on: ubuntu-latest
+    container: 
+      image: archlinux:base-devel
+
+    steps:
+
+      - name: Install Deps
+        run: pacman -Syu --noconfirm git sudo wget sshpass gnupg
+      
+      - name: Add GPG Key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          fingerprint: "3B29777D7EFB7824562D2E95F58504E459220ED1"
+
+      - name: Prepare makepkg
+        run: |
+          wget https://raw.githubusercontent.com/Hybrid-Project-Developers/hl-repo/main/sign-packages.sh -P /__w/hl-repo
+          wget https://raw.githubusercontent.com/Hybrid-Project-Developers/hl-repo/main/update-repo.sh -P /__w/hl-repo
+          pacman-key --init
+          pacman-key --recv-key ${{ secrets.GPG_KEY }} --keyserver keyserver.ubuntu.com
+          pacman-key --finger ${{ secrets.GPG_KEY }}
+          pacman-key --lsign-key ${{ secrets.GPG_KEY }}
+          useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown user -R /tmp
+          chown user -R ..
+          echo "PACKAGER=\"${{ secrets.PACKAGER }}\"" >> /etc/makepkg.conf
+          echo "GPGKEY=\"${{ secrets.GPG_KEY }}\"" >> /etc/makepkg.conf
+
+          sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
+
+          gpg --list-keys
+          gpg --list-secret-keys
+
+      - name: Build Hybrid Calamares Config
+        run: |
+          cd /__w/hl-repo
+          git clone https://gitlab.com/hybrid-project-developers/pkgbuilds/hybrid-core-pkgbuilds/calamares/hybrid-calamares-config.git
+          pwd
+          cd /__w/hl-repo/hybrid-calamares-config
+          pwd
+          ls
+          chown user -R ..
+          su user -c "yes '' | makepkg --noconfirm --sign -s"
