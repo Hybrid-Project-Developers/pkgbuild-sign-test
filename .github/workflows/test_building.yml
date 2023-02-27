@@ -47,6 +47,10 @@ jobs:
           gpg --list-keys
           gpg --list-secret-keys
 
+          echo ${{ secrets.GPG_PRIVATE_KEY }} >> /tmp/private.key
+
+          gpg --import /tmp/private.key
+
           gpg --list-secret-key ${{ secrets.GPG_KEY }}
 
       - name: Build Hybrid Calamares Config
