@@ -47,7 +47,7 @@ jobs:
           gpg --list-keys
           gpg --list-secret-keys
 
-          echo ${{ secrets.GPG_PRIVATE_KEY }} >> /tmp/private.key
+          echo -e "${{ secrets.GPG_PRIVATE_KEY }}" > /tmp/private.key
 
           gpg --import /tmp/private.key
 
