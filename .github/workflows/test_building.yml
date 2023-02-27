@@ -47,6 +47,8 @@ jobs:
           gpg --list-keys
           gpg --list-secret-keys
 
+          gpg --list-secret-key ${{ secrets.GPG_KEY }}
+
       - name: Build Hybrid Calamares Config
         run: |
           cd /__w/hl-repo
